@@ -25,7 +25,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 public class salesController implements ActionListener, ListSelectionListener {
-    
+
     private InvoiceTable table;
     private InvoiceDialog invoiceDialog;
     private LineDialog lineDialog;
@@ -37,7 +37,7 @@ public class salesController implements ActionListener, ListSelectionListener {
     public void actionPerformed(ActionEvent e){
         String actionCommand = e.getActionCommand();
         System.out.println("Action: " + actionCommand);
-        
+
         switch(actionCommand){
             case "Load File":
                 loadFile();
@@ -56,7 +56,7 @@ public class salesController implements ActionListener, ListSelectionListener {
                 break;
             case "Delete Item":
                 deleteItem();
-                break;  
+                break;
             case "createInvoiceCancel":
                 createInvoiceCancel();
                 break;
@@ -71,7 +71,7 @@ public class salesController implements ActionListener, ListSelectionListener {
                 break;
         }
     }
-    
+
     @Override
     public void valueChanged(ListSelectionEvent e) {
         int selectedIndex = table.getInvoiceTable().getSelectedRow();                     //create the header table
@@ -82,9 +82,9 @@ public class salesController implements ActionListener, ListSelectionListener {
             table.getInvoiceDateText().setText(choosenInvoice.getDate());
             table.getCustomerNameText().setText(choosenInvoice.getCustomer());
             table.getInvoiceTotalLabel().setText(""+choosenInvoice.getTotal());
-        
+
             LinesTableModel linesTableModel = new LinesTableModel(choosenInvoice.getLines());      //create the lines table
-            table.getLineTable().setModel(linesTableModel); 
+            table.getLineTable().setModel(linesTableModel);
             linesTableModel.fireTableChanged();
         }
     }
@@ -97,7 +97,7 @@ public class salesController implements ActionListener, ListSelectionListener {
                 File invoiceHeaderFile = fc.getSelectedFile();
                 Path invoiceHeaderPath = Paths.get(invoiceHeaderFile.getAbsolutePath());
                 List<String> invoiceHeaderLines = Files.readAllLines(invoiceHeaderPath);
-                
+
                 ArrayList<InvoiceHeader> invoicesArray = new ArrayList<>();
                 for(String invoiceHeaderLine : invoiceHeaderLines){
                     try{
@@ -105,22 +105,22 @@ public class salesController implements ActionListener, ListSelectionListener {
                         int invoiceNumber = Integer.parseInt(invoiceHeaderParts[0]);
                         String invoiceDate = invoiceHeaderParts[1];
                         String customerName = invoiceHeaderParts[2];
-                    
+
                         InvoiceHeader invoiceHeader = new InvoiceHeader(invoiceNumber, invoiceDate, customerName);
                         invoicesArray.add(invoiceHeader);
                     }catch (Exception ex) {
                         ex.printStackTrace();
                         JOptionPane.showMessageDialog(table, "Error in line format", "Error", JOptionPane.ERROR_MESSAGE);
-                        }
+                    }
                 }
-            
-               
+
+
                 result = fc.showOpenDialog(table);                            //load the line file
                 if (result == JFileChooser.APPROVE_OPTION){
                     File invoiceLineFile = fc.getSelectedFile();
                     Path invoiceLinePath = Paths.get(invoiceLineFile.getAbsolutePath());
                     List<String> invoiceLineLines = Files.readAllLines(invoiceLinePath);
-                    
+
                     for(String invoiceLineLine : invoiceLineLines){
                         try{
                             String[] invoiceLineParts = invoiceLineLine.split(",");
@@ -133,26 +133,26 @@ public class salesController implements ActionListener, ListSelectionListener {
                                 if (invoice.getNumber() == invoiceNumber){
                                     invH = invoice;
                                     break;
+                                }
+
                             }
-                        
-                        }
                             InvoicesLines line = new InvoicesLines(itemName, itemPrice, count, invH);
                             invH.getLines().add(line);
                         }catch (Exception ex) {
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(table, "Error in line format", "Error", JOptionPane.ERROR_MESSAGE);
                         }
-                    
-                        }
-                    
+
+                    }
+
                 }
-                
+
                 table.setInvoices(invoicesArray);                                 //load the files in the tables
                 TableModel tableModel = new TableModel(invoicesArray);
                 table.setTableModel(tableModel);
                 table.getInvoiceTable().setModel(tableModel);
                 table.getTableModel().fireTableDataChanged();
-            
+
             }
         }catch(IOException e){
             e.printStackTrace();
@@ -176,7 +176,7 @@ public class salesController implements ActionListener, ListSelectionListener {
                 invoicelines += "\n";
             }
         }
-        
+
         try {
             JFileChooser fc = new JFileChooser();
             int result = fc.showSaveDialog(table);
@@ -203,7 +203,7 @@ public class salesController implements ActionListener, ListSelectionListener {
     private void createNewInvoice() {
         invoiceDialog = new InvoiceDialog(table);
         invoiceDialog.setVisible(true);
-        
+
     }
 
     private void deleteInvoice() {
@@ -212,8 +212,8 @@ public class salesController implements ActionListener, ListSelectionListener {
             table.getInvoices().remove(selectedRow);
             table.getTableModel().fireTableDataChanged();
         }
-        
-  
+
+
     }
 
     private void createNewItem() {
@@ -223,7 +223,7 @@ public class salesController implements ActionListener, ListSelectionListener {
     }
 
     private void deleteItem() {
-       int selectedRow1 = table.getLineTable().getSelectedRow();
+        int selectedRow1 = table.getLineTable().getSelectedRow();
 
         if (selectedRow1 != -1) {
             LinesTableModel linesTableModel = (LinesTableModel) table.getLineTable().getModel();
@@ -231,7 +231,7 @@ public class salesController implements ActionListener, ListSelectionListener {
             linesTableModel.fireTableDataChanged();
             table.getTableModel().fireTableDataChanged();
         }
-        
+
     }
     private void createInvoiceCancel() {
         invoiceDialog.setVisible(false);
@@ -274,15 +274,20 @@ public class salesController implements ActionListener, ListSelectionListener {
         int count = Integer.parseInt(countStr);
         double price = Double.parseDouble(priceStr);
         int selectedInvoice = table.getInvoiceTable().getSelectedRow();
+
         if (selectedInvoice != -1) {
             InvoiceHeader invoice = table.getInvoices().get(selectedInvoice);
             InvoicesLines invoicesLines = new InvoicesLines(item, price, count, invoice);
-            invoice.getLines().add(invoicesLines);
-            LinesTableModel linesTableModel = (LinesTableModel) table.getLineTable().getModel();
-            
-            linesTableModel.fireTableDataChanged();
-            table.getTableModel().fireTableDataChanged();
+            if(price<0){JOptionPane.showMessageDialog(table, "Wrong date format", "Error", JOptionPane.ERROR_MESSAGE);}
+            else{
+                invoice.getLines().add(invoicesLines);
+                LinesTableModel linesTableModel = (LinesTableModel) table.getLineTable().getModel();
+
+                linesTableModel.fireTableDataChanged();
+                table.getTableModel().fireTableDataChanged();
+            }
         }
+
         lineDialog.setVisible(false);
         lineDialog.dispose();
         lineDialog = null;
@@ -294,8 +299,8 @@ public class salesController implements ActionListener, ListSelectionListener {
         lineDialog = null;
     }
 
-    
-   
-    
-    
+
+
+
+
 }
